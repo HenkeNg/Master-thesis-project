@@ -1,0 +1,63 @@
+version: '2.4'
+
+services:
+        rabbitmq:
+                image: "rabbitmq:3.7.8-management"
+                ports:
+                - 5672:5672
+                - 15672:15672
+                container_name: espoc_rabbitmq
+        eventstore:
+                image: "eventstore/eventstore"
+                ports:
+                - 2113:2113
+                - 1113:1113
+                container_name: espoc_eventstore
+        postgres:
+                image: "postgres:11"
+                ports:
+                - 5432:5432
+                environment:
+                - POSTGRES_USER=admin
+                - POSTGRES_PASSWORD=admin
+                - POSTGRES_DB=EventSourcing
+                container_name: espoc_postgres
+        pgadmin:
+                image: "dpage/pgadmin4"
+                ports:
+                - 8081:80
+                environment:
+                - PGADMIN_DEFAULT_EMAIL=admin@vizrt.com
+                - PGADMIN_DEFAULT_PASSWORD=admin
+                container_name: espoc_pgadmin
+        restapi:
+                image: registry-gitlab.vizrt.com/axg/eventsourcingpoc/restapi
+                build: RESTAPI
+                ports:
+                - 8080:80
+                depends_on:
+                - rabbitmq
+                - eventstore
+                - postgres
+                container_name: espoc_restapi
+                volumes:
+                  - $PWD:/app
+                environment:
+                - POSTGRES_HOSTNAME=postgres
+                - RABBITMQ_HOSTNAME=rabbitmq
+                - EVENTSTORE_HOSTNAME=eventstore
+        readmodelrunner:
+                image: registry-gitlab.vizrt.com/axg/eventsourcingpoc/read-model-runner
+                build: ReadModelUpdateRunner
+                volumes:
+                  - $PWD:/app
+                depends_on:
+                - rabbitmq
+                - eventstore
+                - postgres
+                container_name: espoc_readmodelrunner
+                environment:
+                - EVENTSTORE_HOSTNAME=eventstore
+                - POSTGRES_HOSTNAME=postgres
+                - RABBITMQ_HOSTNAME=rabbitmq
+                - POSTGRES_DATABASE=espoc-1.0
