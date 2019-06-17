@@ -1,3 +1,5 @@
+uses Dotnet 2.3 and docker-compose
+
 "dotnet build" to build
 "dotnet publish" to publish the needed dlls to be able to use them in Docker
 
